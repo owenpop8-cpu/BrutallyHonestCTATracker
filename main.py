@@ -7,11 +7,10 @@ load_dotenv()
 
 CTA_API_KEY = os.environ.get("CTA_API_KEY", "")
 CTA_BASE_URL = "https://www.ctabustracker.com/bustime/api/v3"
-BUS_ID = 8187
 
 app = FastAPI(title="BrutallyHonestTracker")
 
-async def get_predictions(stop_id: str) -> list[dir]:
+async def get_predictions(stop_id: str) -> list[dict]:
 
     params = {
         "key":CTA_API_KEY,
