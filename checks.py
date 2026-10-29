@@ -18,7 +18,6 @@ MAX_PLAUSIBLE_MPH = 30
 DRIFT_WINDOW = timedelta(minutes=5)
 DRIFT_MIN_SPAN = timedelta(minutes=3)
 DRIFT_LIMIT = timedelta(minutes=3)
-BUNCH_FEET = 1500
 BUNCH_MINUTES = 2
 
 PENALTIES = {
@@ -37,7 +36,7 @@ def parse_cta_time(value):
 
     for fmt in ("%Y%m%d %H:%M:%S", "%Y%m%d %H:%M"):
         try:
-            return datetime.strftime(value, fmt).replace(tzinfo=CHICAGO)
+            return datetime.strptime(value, fmt).replace(tzinfo=CHICAGO)
         except ValueError:
             continue
 
@@ -116,7 +115,7 @@ def check_not_moving(readings, now, minutes):
     first, last = recent[0], recent[-1]
     span = last.taken_at - first.taken_at
     if span < MOVE_MIN_SPAN:
-        return None  # not enough history yet
+        return None
     if first.feet is None or last.feet is None or last.feet < AT_STOP_FEET:
         return None
     progress = first.feet - last.feet
@@ -176,13 +175,7 @@ def find_bunched(preds):
     for group in groups.values():
         group.sort(key=lambda p: p["minutes"])
         for a, b in zip(group, group[1:]):
-            close_time = b["minutes"] - a["minutes"] <= BUNCH_MINUTES
-            close_feet = (
-                a["feet"] is not None
-                and b["feet"] is not None
-                and abs(a["feet"] - b["feet"]) < BUNCH_FEET
-            )
-            if close_time or close_feet:
+            if b["minutes"] - a["minutes"] <= BUNCH_MINUTES:
                 bunched.add(a["vehicle_id"])
                 bunched.add(b["vehicle_id"])
     return bunched
@@ -256,13 +249,12 @@ def analyze_stop(stop_id, predictions, vehicles, now=None):
                 "arrival_time": e["arrival_time"],
                 "minutes_away": e["minutes_away"],
                 "minutes": e["minutes"],
+                "feet": e["feet"],
                 "score": score,
                 "label": _label(score, ghost),
                 "flags": list(fired.values()),
             }
         )
 
-        results.sort(key=lambda r: (r["minutes"] is None, r["minutes"] or 0))
-        return results
-
-
+    results.sort(key=lambda r: (r["minutes"] is None, r["minutes"] or 0))
+    return results
