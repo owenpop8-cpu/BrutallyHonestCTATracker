@@ -47,6 +47,34 @@ async def get_predictions(stop_id: str) -> list[dict]:
     return cleaned
 
 
+async def get_vehicles(vehicle_ids: list[str]) -> list[dict]:
+    unique_ids = list(dict.fromkeys(vehicle_ids))
+    if not unique_ids:
+        return []
+ 
+    vehicles = []
+ 
+    async with httpx.AsyncClient(
+        timeout=10,
+        transport=httpx.AsyncHTTPTransport(local_address="0.0.0.0"),
+    ) as client:
+        for start in range(0, len(unique_ids), 10):
+            batch = unique_ids[start:start + 10]
+            params = {
+                "key": CTA_API_KEY,
+                "vid": ",".join(batch),
+                "format": "json",
+                "tmres": "s",
+            }
+            response = await client.get(f"{CTA_BASE_URL}/getvehicles", params=params)
+            response.raise_for_status()
+            body = response.json().get("bustime-response", {})
+            vehicles.extend(body.get("vehicle", []))
+ 
+    return vehicles
+
+
+    
 @app.get("/stops/{stop_id}/predictions")
 async def predictions_for_stop(stop_id: str):
     return await get_predictions(stop_id)

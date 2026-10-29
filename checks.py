@@ -203,3 +203,66 @@ def _label(score, ghost):
 
     return "Unreliable"
 
+
+
+
+
+def analyze_stop(stop_id, predictions, vehicles, now=None):
+
+    now = now or datetime.now(CHICAGO)
+
+    enriched = []
+    for p in predictions:
+        if not p.get("vehicle_id"):
+            continue
+
+        e = {
+            **p,
+            "minutes": parse_countdown(p.get("minutes_away")),
+            "feet": _to_int(p.get("feet_from_stop")),
+            "arrival": parse_cta_time(p.get("arrival_time")),
+        }
+
+        record(stop_id, e["vehicle_id"], e["feet"], e["arrival"], now)
+        enriched.append(e)
+
+    forget_missing(now)
+
+
+    bunched = find_bunched(enriched)
+
+    results = []
+
+    for e in enriched:
+        vid = e["vehicle_id"]
+        readings = history[(stop_id, vid)]
+        found = {
+            "stale_gps": check_stale_gps(vehicles.get(vid), now),
+            "not_moving": check_not_moving(readings, now, e["minutes"]),
+            "impossible_eta": check_impossible_eta(e["feet"], e["minutes"]),
+            "drift": check_drift(readings, now),
+            "bunched": "Bunched with another bus on this route" if vid in bunched else None,
+            "delayed": "CTA marks this bus delayed" if e.get("delayed") else None,
+        }
+
+        fired = {name: msg for name, msg in found.items() if msg}
+        score = max(0, 100 - sum(PENALTIES[name] for name in fired))
+        ghost = "stale_gps" in fired and "not_moving" in fired
+        results.append(
+            {
+                "vehicle_id": vid,
+                "route": e["route"],
+                "destination": e["destination"],
+                "arrival_time": e["arrival_time"],
+                "minutes_away": e["minutes_away"],
+                "minutes": e["minutes"],
+                "score": score,
+                "label": _label(score, ghost),
+                "flags": list(fired.values()),
+            }
+        )
+
+        results.sort(key=lambda r: (r["minutes"] is None, r["minutes"] or 0))
+        return results
+
+
