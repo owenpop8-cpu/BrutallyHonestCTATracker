@@ -11,6 +11,8 @@ STALE_GPS_AFTER = timedelta(minutes=2)
 MOVE_WINDOW = timedelta(minutes=5)
 MOVE_MIN_SPAN = timedelta(minutes=4)
 MIN_PROGRESS_FEET = 300
+TRAVEL_FEET_PER_MIN = 1760 
+LAYOVER_SLACK_MIN = 3
 AT_STOP_FEET = 400
 MAX_PLAUSIBLE_MPH = 30
 DRIFT_WINDOW = timedelta(minutes=5)
@@ -107,24 +109,97 @@ def check_stale_gps(vehicle, now):
     return None
 
 
-def check_not_moving(readings, now):
+def check_not_moving(readings, now, minutes):
     recent = _recent(readings, now, MOVE_WINDOW)
+    if len(recent) < 2:
+        return None
+    first, last = recent[0], recent[-1]
+    span = last.taken_at - first.taken_at
+    if span < MOVE_MIN_SPAN:
+        return None  # not enough history yet
+    if first.feet is None or last.feet is None or last.feet < AT_STOP_FEET:
+        return None
+    progress = first.feet - last.feet
+    if progress < MIN_PROGRESS_FEET:
+
+        if minutes is not None:
+            drive_minutes = last.feet / TRAVEL_FEET_PER_MIN
+            if minutes > drive_minutes + LAYOVER_SLACK_MIN:
+                return None
+        minutes = round(span.total_seconds() / 60)
+        return f"Bus has moved only {max(progress, 0)} ft in {minutes} min"
+    return None
+
+
+def check_impossible_eta(feet, minutes):
+    if feet is None or minutes is None:
+        return None
+
+    mph = (feet / 5280) / (max(minutes, 1) / 60)
+    if feet > 1500 and mph > MAX_PLAUSIBLE_MPH:
+        return f"ETA implies {mph:.0f} mph"
+
+    return None
+
+
+def check_drift(readings, now):
+    recent = [r for r in _recent(readings, now, DRIFT_WINDOW) if r.arrival]
     if len(recent) < 2:
         return None
 
     first, last = recent[0], recent[-1]
+
     span = last.taken_at - first.taken_at
-    if span < MOVE_MIN_SPAN:
+    if span < DRIFT_MIN_SPAN:
         return None
 
-    if first.feet is None or last.feet is None or last.feet < AT_STOP_FEET:
-        return None
+    slip = last.arrival - first.arrival
 
-    progress = first.feet - last.feet
-
-    if progress < MIN_PROGRESS_FEET:
-        minutes = round(span.total_seconds() / 60)
-        return f"Bus has moved only {max(progress, 0)} ft in {minutes} min"
+    if slip >= DRIFT_LIMIT:
+        return (
+            f"Arrival estimate slid {round(slip.total_seconds() / 60)} min later "
+            f"in the last {round(span.total_seconds() / 60)} min"
+        )
 
     return None
+
+
+def find_bunched(preds):
+    groups = {}
+    for p in preds:
+        if p["minutes"] is None:
+            continue
+        key = (p["route"], p.get("direction") or p.get("destination"))
+        groups.setdefault(key, []).append(p)
+ 
+    bunched = set()
+    for group in groups.values():
+        group.sort(key=lambda p: p["minutes"])
+        for a, b in zip(group, group[1:]):
+            close_time = b["minutes"] - a["minutes"] <= BUNCH_MINUTES
+            close_feet = (
+                a["feet"] is not None
+                and b["feet"] is not None
+                and abs(a["feet"] - b["feet"]) < BUNCH_FEET
+            )
+            if close_time or close_feet:
+                bunched.add(a["vehicle_id"])
+                bunched.add(b["vehicle_id"])
+    return bunched
+
+
+
+
+
+def _label(score, ghost):
+    if ghost:
+        return "Ghost bus"
+
+    if score >= 80:
+        return "Reliable"
+
+    if score >= 40:
+        return "Shaky"
+
+    return "Unreliable"
 
