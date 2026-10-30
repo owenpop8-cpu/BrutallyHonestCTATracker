@@ -15,7 +15,7 @@ load_dotenv()
 CTA_API_KEY = os.environ.get("CTA_API_KEY", "")
 CTA_BASE_URL = "https://www.ctabustracker.com/bustime/api/v3"
 
-STOP_IDS = ["REPLACE_WITH_STOP_ID_1", "REPLACE_WITH_STOP_ID_2"]
+STOP_IDS = ["8187"]
 POLL_SECONDS = 30
 WINDOW_START = time(6, 30)
 WINDOW_END = time(9, 0)

@@ -1,0 +1,162 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  background: #f5f5f5;
+}
+
+main {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.last-updated {
+  margin: 0.25rem 0 1rem;
+  color: #666;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.last-updated-stale {
+  color: #b00020;
+  font-weight: 600;
+}
+
+.summary {
+  color: white;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.summary h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.summary-stop-by {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.summary-detail {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-safe  { background: #14602a; }
+.summary-tight { background: #b25e00; }
+.summary-none  { background: #2b2b2b; }
+
+.arrivals {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.arrival {
+  background: white;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.arrival-recommended {
+  box-shadow: 0 0 0 2px #1a73e8;
+}
+
+.arrival-dimmed {
+  opacity: 0.6;
+}
+
+.recommended-tag {
+  display: inline-block;
+  margin-bottom: 0.4rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  background: #1a73e8;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.arrival-main {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr auto auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.route {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.countdown {
+  font-weight: 600;
+}
+
+.clock {
+  color: #666;
+  font-variant-numeric: tabular-nums;
+}
+
+.arrival-details {
+  margin-top: 0.5rem;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.badge-reliable   { background: #d7f2dd; color: #14602a; }
+.badge-shaky      { background: #fff1c2; color: #7a5600; }
+.badge-unreliable { background: #fcd9d9; color: #8a1c1c; }
+.badge-ghost      { background: #2b2b2b; color: #fff; }
+.badge-unknown    { background: #e4e4e4; color: #333; }
+.badge-safe       { background: #d7f2dd; color: #14602a; }
+.badge-tight      { background: #ffe0b8; color: #7a3d00; }
+.badge-late       { background: #fcd9d9; color: #8a1c1c; }
+
+.timing {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.flags {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  color: #444;
+  font-size: 0.9rem;
+}
+
+.no-flags {
+  margin: 0.5rem 0 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.error {
+  color: #b00020;
+}
+
+.notice,
+.empty {
+  color: #666;
+}
